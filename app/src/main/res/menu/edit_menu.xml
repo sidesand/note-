@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- 编辑菜单项 -->
+    <item
+        android:id="@+id/menu_edit"
+        android:icon="?attr/menu_edit"
+        android:title="Edit"
+        app:showAsAction="ifRoom" />
+
+    <!-- 保存菜单项 -->
+    <item
+        android:id="@+id/menu_save"
+        android:icon="?attr/menu_save"
+        android:title="Save"
+        app:showAsAction="always" />
+
+    <!-- 撤销菜单项 -->
+    <item
+        android:id="@+id/menu_undo"
+        android:icon="?attr/menu_undo"
+        android:title="Undo"
+        app:showAsAction="ifRoom" />
+
+    <!-- 恢复菜单项 -->
+    <item
+        android:id="@+id/menu_redo"
+        android:icon="?attr/menu_redo"
+        android:title="Redo"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/delete"
+        android:icon="?attr/menu_delete"
+        android:title="Delete"
+        app:showAsAction="always"/>
+
+</menu>

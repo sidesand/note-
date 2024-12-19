@@ -1,0 +1,55 @@
+<!-- res/layout/item_note.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/note_shape"
+    android:orientation="vertical"
+    android:outlineAmbientShadowColor="@color/black"
+    android:padding="16dp"
+    android:paddingLeft="10dp"
+    android:paddingTop="5dp"
+    android:paddingRight="10dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/note_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Note Title"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?attr/tvMainColor"
+        android:singleLine="true"/>
+
+    <TextView
+        android:id="@+id/note_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2024-01-01"
+        android:textColor="#888"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/note_preview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="This is a preview of the note content."
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/note_tag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tag"
+        android:textSize="12sp"
+        android:textColor="@color/greyC"/>
+
+    <TextView
+        android:id="@+id/note_deleted"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Deleted"
+        android:textColor="#ff0000"
+        android:textSize="12sp"
+        android:visibility="gone" />
+</LinearLayout>
