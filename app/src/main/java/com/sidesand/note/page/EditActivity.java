@@ -1,13 +1,14 @@
 package com.sidesand.note.page;
 
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Spannable;
-import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -45,7 +46,13 @@ public class EditActivity extends BaseActivity {
     private List<String> tagList;
     private CustomSpinnerAdapter myAdapter;
     private String tag_name;
+    private MenuItem menuItem_before;
+    private MenuItem menuItem_next;
 
+    private List<Integer> highlightPositions = new ArrayList<>();
+    private int currentHighlightIndex = -1;
+
+    @SuppressLint("UseCompatLoadingForDrawables")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,11 +66,11 @@ public class EditActivity extends BaseActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         mySpinner = (Spinner) findViewById(R.id.spinner);
 
-
-        if (isNightMode())
+        if (isNightMode()) {
             myToolbar.setNavigationIcon(getDrawable(R.drawable.ic_keyboard_arrow_left_white_24dp));
-        else myToolbar.setNavigationIcon(getDrawable(R.drawable.ic_keyboard_arrow_left_black_24dp));
-
+        } else {
+            myToolbar.setNavigationIcon(getDrawable(R.drawable.ic_keyboard_arrow_left_black_24dp));
+        }
 
         // 点击返回按钮
         myToolbar.setNavigationOnClickListener(new OnClickListener() {
@@ -86,9 +93,7 @@ public class EditActivity extends BaseActivity {
             note_id = getIntent.getLongExtra("note_id", 0);
             old_content = getIntent.getStringExtra("content");
             old_title = getIntent.getStringExtra("title");
-//            old_time = getIntent.getStringExtra("time");
             old_tag_name = getIntent.getStringExtra("tag_name");
-//            Log.d(TAG, "编辑标签为:" + old_tag_name);
             etContent.setText(old_content);
             etTitle.setText(old_title);
             etContent.setSelection(old_content.length());
@@ -98,8 +103,6 @@ public class EditActivity extends BaseActivity {
             old_content = getIntent.getStringExtra("content");
             old_tag_name = getIntent.getStringExtra("tag_name");
             String searchQuery = getIntent.getStringExtra("searchQuery"); //searchQuery
-//            old_time = getIntent.getStringExtra("time");
-//            Log.d(TAG, "编辑标签为:" + old_tag_name);
             etContent.setText(old_content);
             etTitle.setText(old_title);
             etContent.setSelection(old_content.length());
@@ -121,30 +124,27 @@ public class EditActivity extends BaseActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-
     }
 
-    private void highlightSearchTerm(EditText editText, String searchTerm) {
-        if (searchTerm == null || searchTerm.isEmpty()) {
-            Log.d(TAG, "Search term is empty or null.");
+    private void highlightSearchTerm(EditText etContent, String searchQuery) {
+        if (searchQuery == null || searchQuery.isEmpty()) {
             return;
         }
 
-        Log.d(TAG, "Highlighting search term: " + searchTerm);
+        SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(etContent.getText());
+        highlightPositions.clear();
 
-        SpannableString spannableString = new SpannableString(editText.getText());
         int index = 0;
-
-        while ((index = spannableString.toString().toLowerCase().indexOf(searchTerm.toLowerCase(), index)) != -1) {
-            Log.d(TAG, "Found match at index: " + index);
-            ForegroundColorSpan span = new ForegroundColorSpan(Color.RED); // 设置高亮颜色
-            spannableString.setSpan(span, index, index + searchTerm.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            index += searchTerm.length(); // 继续查找下一个匹配项
+        while ((index = spannableStringBuilder.toString().toLowerCase().indexOf(searchQuery.toLowerCase(), index)) != -1) {
+            spannableStringBuilder.setSpan(new ForegroundColorSpan(Color.YELLOW), index, index + searchQuery.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannableStringBuilder.setSpan(new BackgroundColorSpan(Color.RED), index, index + searchQuery.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            highlightPositions.add(index);
+            index += searchQuery.length();
         }
 
-        editText.setText(spannableString);
+        etContent.setText(spannableStringBuilder);
+        currentHighlightIndex = -1; // Reset the current highlight index
     }
-
 
     private void refreshSpinner(EditActivity context, String tag_name) {
         // 刷新标签列表
@@ -169,7 +169,6 @@ public class EditActivity extends BaseActivity {
             tag_name = "未分类";
         }
 
-//        Log.d(TAG, "设置spinner标签" + tag_name);
         int spinnerPosition = myAdapter.getPosition(tag_name);
         if (spinnerPosition >= 0) {
             mySpinner.setSelection(spinnerPosition);
@@ -200,7 +199,6 @@ public class EditActivity extends BaseActivity {
     }
 
     private Intent checkNote(Intent intent) {
-//        Log.d(TAG, "checkNote:前期id= " + note_id);
         if (openMode == 4) {// 新建模式
             if (etContent.getText().toString().isEmpty()) {
                 intent.putExtra("mode", -1); //未创建内容
@@ -210,9 +208,6 @@ public class EditActivity extends BaseActivity {
                 intent.putExtra("content", etContent.getText().toString());
                 intent.putExtra("create_time", dateToStr());
                 intent.putExtra("tag_name", tag_name);
-//                Log.d(TAG, "newNote: " + "title: " + etTitle.getText().toString() + ",content: " + etContent.getText().toString());
-//                Log.d(TAG, "新建Note: " + "tag_name = " + tagName);
-
             }
         } else {//openMode == 3,编辑模式
             if (etContent.getText().toString().equals(old_content) && etTitle.getText().toString().equals(old_title) && !tagChange)
@@ -224,14 +219,12 @@ public class EditActivity extends BaseActivity {
                 intent.putExtra("content", etContent.getText().toString());
                 intent.putExtra("update_time", dateToStr());
                 intent.putExtra("tag_name", tag_name);
-//                Log.d(TAG, "更新Note: " + "tag_name = " + tagName);
-//                Log.d(TAG, "updateNote: " + "note_id: " + note_id + "，title: " + etTitle.getText().toString() + "，content: " + etContent.getText().toString());
             }
         }
         return intent;
     }
 
-
+    // 定义menuItem
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.edit_menu, menu);
@@ -239,12 +232,22 @@ public class EditActivity extends BaseActivity {
         MenuItem save = menu.findItem(R.id.menu_save);
         MenuItem undo = menu.findItem(R.id.menu_undo);
         MenuItem redo = menu.findItem(R.id.menu_redo);
+        menuItem_before = menu.findItem(R.id.menu_before);
+        menuItem_next = menu.findItem(R.id.menu_next);
 
         delete.setVisible(true);
         save.setVisible(true);
         undo.setVisible(true);
         redo.setVisible(true);
 
+        // 根据条件设置可见性
+        if (openMode == 5) { // 搜索状态的note
+            menuItem_before.setVisible(true);
+            menuItem_next.setVisible(true);
+        } else {
+            menuItem_before.setVisible(false);
+            menuItem_next.setVisible(false);
+        }
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -280,8 +283,48 @@ public class EditActivity extends BaseActivity {
 
         } else if (item.getItemId() == R.id.menu_redo) {
 
+        } else if (item.getItemId() == R.id.menu_before) {
+            if (currentHighlightIndex > 0) {
+                currentHighlightIndex--;
+                scrollToHighlight(currentHighlightIndex);
+            }
+            return true;
+        } else if (item.getItemId() == R.id.menu_next) {
+            if (currentHighlightIndex < highlightPositions.size() - 1) {
+                currentHighlightIndex++;
+                scrollToHighlight(currentHighlightIndex);
+            }
+            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void scrollToHighlight(int index) {
+        if (index < 0 || index >= highlightPositions.size()) {
+            return;
+        }
+
+        int position = highlightPositions.get(index);
+        etContent.setSelection(position);
+        etContent.requestFocus();
+
+        // Scroll to the position
+        etContent.post(() -> {
+            int line = etContent.getLayout().getLineForOffset(position);
+            int y = etContent.getLayout().getLineTop(line);
+
+            // Check if the line is visible
+            int scrollY = etContent.getScrollY();
+            int height = etContent.getHeight();
+            int lineBottom = etContent.getLayout().getLineBottom(line);
+
+            if (y < scrollY || lineBottom > scrollY + height) {
+                // Scroll to the line
+                etContent.scrollTo(0, y);
+            }
+        });
+
+        currentHighlightIndex = index;
     }
 
     public String dateToStr() {
@@ -289,5 +332,4 @@ public class EditActivity extends BaseActivity {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return simpleDateFormat.format(date);
     }
-
 }

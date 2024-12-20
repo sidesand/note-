@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -36,6 +37,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends BaseActivity {
 
@@ -55,6 +58,11 @@ public class MainActivity extends BaseActivity {
 
     // 搜索词
     private String searchQuery = "";
+
+    // 在类的成员变量中定义 Handler 和 Executor
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Executor executor = Executors.newSingleThreadExecutor();
+
 
 /*    private DisplayMetrics metrics;
     private PopupWindow popupWindow; // 左侧弹出菜单
@@ -166,26 +174,26 @@ public class MainActivity extends BaseActivity {
 
         Objects.requireNonNull(mSearchView).setQueryHint("Search");
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            private final Handler handler = new Handler();
+            private final Runnable searchRunnable = () -> {
+                if (!searchQuery.isEmpty()) {
+                    List<Note> matchedNotes = mNoteHelper.searchNotesByTitleOrContent(searchQuery);
+                    noteAdapter.updateNotes(matchedNotes);
+                    recyclerView.scrollToPosition(0);
+                }
+            };
+
             @Override
             public boolean onQueryTextSubmit(String query) {
-                // 保存全局搜索词
                 searchQuery = query;
-                // 查询数据库以查找标题或内容匹配的笔记
-                List<Note> matchedNotes = mNoteHelper.searchNotesByTitleOrContent(query);
-
-                // 更新适配器的数据集
-                noteAdapter.updateNotes(matchedNotes);
-
-                // 显示结果
-                recyclerView.scrollToPosition(0);
-
+                handler.removeCallbacks(searchRunnable);
+                handler.postDelayed(searchRunnable, 500); // 延迟 500ms 执行搜索
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
-                    // 当查询文本为空时，重新加载所有笔记数据
                     loadAllNotes();
                 }
                 return false;
@@ -331,15 +339,15 @@ public class MainActivity extends BaseActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
+    // 使用 AsyncTask 加载数据
     private void loadAllNotes() {
-        // 加载所有笔记数据
-        List<Note> allNotes = mNoteHelper.getAllNotes();
-
-        // 更新适配器的数据集
-        noteAdapter.updateNotes(allNotes);
-
-        // 显示结果
-        recyclerView.scrollToPosition(0);
+        executor.execute(() -> {
+            List<Note> notes = mNoteHelper.getAllNotes();
+            handler.post(() -> {
+                noteAdapter.updateNotes(notes);
+                recyclerView.scrollToPosition(0);
+            });
+        });
     }
 
 
@@ -371,6 +379,8 @@ public class MainActivity extends BaseActivity {
         // 在 Activity 或 Fragment 中
         recyclerView = findViewById(R.id.lv);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));  // 或者 GridLayoutManager
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setItemViewCacheSize(20); // 根据需要调整缓存大小
 
         // 创建 NoteAdapter 实例
         noteAdapter = new NoteAdapter(this, noteList, new NoteAdapter.OnNoteClickListener() {
@@ -467,7 +477,17 @@ public class MainActivity extends BaseActivity {
 //            achievement.addNote(content);
         } else {
         }
-        refreshListView();
+
+        // 检查是否处于搜索状态
+        if (!searchQuery.isEmpty()) {
+            // 如果处于搜索状态，则重新加载搜索结果
+            List<Note> matchedNotes = mNoteHelper.searchNotesByTitleOrContent(searchQuery);
+            noteAdapter.updateNotes(matchedNotes);
+            recyclerView.scrollToPosition(0);
+        } else {
+            // 否则，刷新整个列表
+            refreshListView();
+        }
     }
 
     private void refreshListView() {

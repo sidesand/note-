@@ -15,11 +15,11 @@
         android:id="@+id/note_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:singleLine="true"
         android:text="Note Title"
-        android:textSize="18sp"
-        android:textStyle="bold"
         android:textColor="?attr/tvMainColor"
-        android:singleLine="true"/>
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/note_time"
@@ -33,7 +33,9 @@
         android:id="@+id/note_preview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="This is a preview of the note content."
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="请添加笔记吧！"
         android:textSize="14sp" />
 
     <TextView
@@ -41,8 +43,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Tag"
-        android:textSize="12sp"
-        android:textColor="@color/greyC"/>
+        android:textColor="@color/greyC"
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/note_deleted"

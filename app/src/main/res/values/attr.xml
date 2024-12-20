@@ -9,6 +9,8 @@
     <attr name="menu_save" format="string"/>
     <attr name="menu_undo" format="string"/>
     <attr name="menu_redo" format="string"/>
+    <attr name="menu_next" format="string"/>
+    <attr name="menu_before" format="string"/>
     <attr name="titleColor" format="color"/>
     <attr name="tvMainColor" format="color"/>
     <attr name="tvSubColor" format="color"/>
