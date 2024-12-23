@@ -63,6 +63,9 @@ public class MainActivity extends BaseActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Executor executor = Executors.newSingleThreadExecutor();
 
+    private enum ReturnMode {
+        NOTHING, CREATE_NEW_NOTE, UPDATE_CURRENT_NOTE, DELETE_CURRENT_NOTE
+    }
 
 /*    private DisplayMetrics metrics;
     private PopupWindow popupWindow; // 左侧弹出菜单
@@ -194,7 +197,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
-                    loadAllNotes();
+                    refreshListView();
                 }
                 return false;
             }
@@ -202,7 +205,7 @@ public class MainActivity extends BaseActivity {
 
         mSearchView.setOnCloseListener(() -> {
             // 当 SearchView 关闭时，重新加载所有笔记数据
-            loadAllNotes();
+            refreshListView();
             searchQuery = "";
             return false;
         });
@@ -339,16 +342,6 @@ public class MainActivity extends BaseActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    // 使用 AsyncTask 加载数据
-    private void loadAllNotes() {
-        executor.execute(() -> {
-            List<Note> notes = mNoteHelper.getAllNotes();
-            handler.post(() -> {
-                noteAdapter.updateNotes(notes);
-                recyclerView.scrollToPosition(0);
-            });
-        });
-    }
 
 
     private void initView() {
@@ -387,7 +380,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onNoteClick(Note note) {
                 // 处理笔记点击事件
-                Toast.makeText(getApplicationContext(), "Clicked: " + note.getTitle(), Toast.LENGTH_SHORT).show();
+//                Toast.makeText(getApplicationContext(), "Clicked: " + note.getTitle(), Toast.LENGTH_SHORT).show();
 
                 Intent intent = new Intent(MainActivity.this, EditActivity.class);
                 if ("".equals(searchQuery)) {
@@ -432,54 +425,37 @@ public class MainActivity extends BaseActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (data == null) {
-            // 处理 data 为 null 的情况
-            Log.e("MainActivity", "onActivityResult: data is null");
+        if (data == null || data.getExtras() == null) {
+            Log.e("MainActivity", "onActivityResult: data or extras is null");
             return;
         }
 
-        int returnMode;//0: create new note; 1: update current note; 2: delete current note
-        long note_Id;
-        //-1:nothing 0: create new note; 1: update current note; 2: delete current note
-        returnMode = Objects.requireNonNull(data.getExtras()).getInt("mode", -1);
-        note_Id = data.getExtras().getLong("note_id", 0);
-        if (returnMode == 1) {  //update current note  更新
-            String title = data.getExtras().getString("title");
-            String content = data.getExtras().getString("content");
-            String tag_name = data.getExtras().getString("tag_name");
-            String update_time = data.getExtras().getString("update_time");
+        //0: create new note; 1: update current note; 2: delete current note
+        int returnMode = Objects.requireNonNull(data.getExtras()).getInt("mode", -1);
+        ;
+        long note_Id = data.getExtras().getLong("note_id", 0);
 
-//            int tagId = data.getExtras().getInt("tagId", 1);
-
-            Note note = new Note(title, content, tag_name);
-//            note.setTagId(tagId);
-            note.setNoteId(note_Id);
-            note.setUpdateTime(update_time);
-            mNoteHelper.update(note);
-//            Log.d(TAG, "笔记更新成功:" + "note_id = " + note_Id + ",title = " + note.getTitle() + ",content = " + note.getContent());
-//            achievement.editNote(op.getNote(note_Id).getContent(), content);
-        } else if (returnMode == 2) {  //delete current note
-            mNoteHelper.deleteById(note_Id);
-//            achievement.deleteNote();
-        } else if (returnMode == 0) {  // create new note
-            String title = data.getExtras().getString("title");
-            String content = data.getExtras().getString("content");
-            String tag_name = data.getExtras().getString("tag_name");
-
-            String create_time = data.getExtras().getString("create_time");
-
-            Note note = new Note(title, content, tag_name);
-            note.setNoteId(note_Id);
-            note.setCreateTime(create_time);
-            if (mNoteHelper.insert(note) > 0) {
-//                Log.d(TAG, "笔记保存成功" + "note_id = " + note.getNoteId() + ",title = " + note.getTitle() + ",content = " + note.getContent());
-            }
-//            achievement.addNote(content);
-        } else {
+        switch (returnMode) {
+            case 1:
+                updateNote(data, note_Id);
+                break;
+            case 2:
+                try {
+                    mNoteHelper.deleteById(note_Id);
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error deleting note: " + e.getMessage());
+                }
+                break;
+            case 0:
+                createNote(data, note_Id);
+                break;
+            default:
+                // Do nothing for other modes
+                break;
         }
 
         // 检查是否处于搜索状态
-        if (!searchQuery.isEmpty()) {
+        if (searchQuery != null && !searchQuery.isEmpty()) {
             // 如果处于搜索状态，则重新加载搜索结果
             List<Note> matchedNotes = mNoteHelper.searchNotesByTitleOrContent(searchQuery);
             noteAdapter.updateNotes(matchedNotes);
@@ -490,28 +466,62 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    private void updateNote(Intent data, long note_Id) {
+        Bundle extras = data.getExtras();
+        String title = extras.getString("title");
+        String content = extras.getString("content");
+        String tag_name = extras.getString("tag_name");
+        String update_time = extras.getString("update_time");
+
+        Note note = new Note(title, content, tag_name);
+        note.setNoteId(note_Id);
+        note.setUpdateTime(update_time);
+
+        try {
+            mNoteHelper.update(note);
+            Log.d("MainActivity", "笔记更新成功:" + "note_id = " + note_Id + ",title = " + note.getTitle() + ",content = " + note.getContent());
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error updating note: " + e.getMessage());
+        }
+    }
+
+    private void createNote(Intent data, long note_Id) {
+        Bundle extras = data.getExtras();
+        String title = extras.getString("title");
+        String content = extras.getString("content");
+        String tag_name = extras.getString("tag_name");
+        String create_time = extras.getString("create_time");
+
+        Note note = new Note(title, content, tag_name);
+        note.setNoteId(note_Id);
+        note.setCreateTime(create_time);
+
+        try {
+            if (mNoteHelper.insert(note) > 0) {
+                refreshListView();
+                Log.d("MainActivity", "笔记保存成功" + "note_id = " + note.getNoteId() + ",title = " + note.getTitle() + ",content = " + note.getContent());
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error creating note: " + e.getMessage());
+        }
+    }
+
     private void refreshListView() {
-        // 获取所有笔记的列表
-        List<Note> updatedNoteList = mNoteHelper.getAllNotes();  // 假设这是你从数据库获取笔记数据的方式
+        executor.execute(() -> {
+            noteList = mNoteHelper.getAllNotes();
+            handler.post(() -> {
+                noteAdapter.updateNotes(noteList);
+                recyclerView.scrollToPosition(0);
+                // 判断是否显示空视图
+                if (noteList.isEmpty()) {
+                    mEmptyView.setVisibility(View.VISIBLE);  // 显示空视图
+                } else {
+                    mEmptyView.setVisibility(View.GONE);  // 隐藏空视图
+                }
+            });
+        });
 
-        // 计算差异
-        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new NoteDiffCallback(noteList, updatedNoteList));
 
-        // 更新本地笔记列表
-        noteList.clear();
-        noteList.addAll(updatedNoteList);
-
-        // 应用差异
-        if (noteAdapter != null) {
-            diffResult.dispatchUpdatesTo(noteAdapter);
-        }
-
-        // 判断是否显示空视图
-        if (noteList.isEmpty()) {
-            mEmptyView.setVisibility(View.VISIBLE);  // 显示空视图
-        } else {
-            mEmptyView.setVisibility(View.GONE);  // 隐藏空视图
-        }
     }
 
     // 定义一个 DiffUtil.Callback 来计算差异

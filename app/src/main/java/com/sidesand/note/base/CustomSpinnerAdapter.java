@@ -1,16 +1,19 @@
 // CustomSpinnerAdapter.java
 package com.sidesand.note.base;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,7 +71,6 @@ public class CustomSpinnerAdapter extends ArrayAdapter<String> {
         return convertView;
     }
 
-
     @Override
     public View getDropDownView(int position, View convertView, ViewGroup parent) {
         Log.d("CustomSpinnerAdapter", "getDropDownView Position: " + position + ", Items Size: " + items.size());
@@ -93,7 +95,7 @@ public class CustomSpinnerAdapter extends ArrayAdapter<String> {
             textView.setText(getItem(position)); // 设置为“添加标签”
             deleteIcon.setVisibility(View.GONE); // 隐藏删除图标
 
-            // 设置点击事件
+            // 设置“添加标签”项的点击事件
             convertView.setOnClickListener(v -> {
                 addItemDialog();
             });
@@ -113,32 +115,34 @@ public class CustomSpinnerAdapter extends ArrayAdapter<String> {
             return;
         }
 
+        AlertDialog.Builder builder = getDeleteBuilder(position);
+        // 显示对话框
+        builder.show();
+    }
+
+    private AlertDialog.Builder getDeleteBuilder(int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("确认删除");
         builder.setMessage("您确定要删除此标签吗？");
 
         // 设置“确定”按钮
         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                // 删除标签
-                String tagToDelete = items.remove(position);
-                mNoteHelper.deleteTag(tagToDelete);
-                notifyDataSetChanged();
-                Toast.makeText(context, "标签已删除", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // 设置“取消”按钮
-        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        // 显示对话框
-        builder.show();
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // 删除标签
+                        String tagToDelete = items.remove(position);
+                        mNoteHelper.deleteTag(tagToDelete);
+                        // 通知 Spinner 刷新
+                        refreshSpinner();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+        return builder;
     }
 
     private void addItemDialog() {
@@ -163,9 +167,8 @@ public class CustomSpinnerAdapter extends ArrayAdapter<String> {
                     mNoteHelper.insertTag(newTag);
                     // 添加新标签到数据源
                     items.add(newTag);
-                    // 通知适配器数据已更改
-                    notifyDataSetChanged();
-                    Toast.makeText(context, "标签已添加", Toast.LENGTH_SHORT).show();
+                    // 通知 Spinner 刷新
+                    refreshSpinner();
                 } else {
                     Toast.makeText(context, "请输入有效的标签", Toast.LENGTH_SHORT).show();
                 }
@@ -182,5 +185,19 @@ public class CustomSpinnerAdapter extends ArrayAdapter<String> {
 
         // 显示对话框
         builder.show();
+    }
+
+    // 刷新 Spinner
+    private void refreshSpinner() {
+        Spinner spinner = (Spinner) ((Activity) context).findViewById(R.id.spinner);
+
+        // 创建一个新的适配器
+        CustomSpinnerAdapter adapter = new CustomSpinnerAdapter(context, R.layout.spinner_item, items);
+
+        // 重新设置适配器
+        spinner.setAdapter(adapter);
+
+        // 如果需要，恢复选中的位置
+        spinner.setSelection(spinner.getSelectedItemPosition());
     }
 }

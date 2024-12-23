@@ -146,36 +146,43 @@ public class EditActivity extends BaseActivity {
         currentHighlightIndex = -1; // Reset the current highlight index
     }
 
-    private void refreshSpinner(EditActivity context, String tag_name) {
-        // 刷新标签列表
-        tagList = mNoteHelper.getAllTags();
-        if (tagList != null) {
-            tagList.removeIf(tag -> tag == null || tag.isEmpty()); // 移除空标签和 null 值
-        } else {
-            tagList = new ArrayList<>(); // 如果 tagList 为 null，初始化为空列表
-        }
-
-        // 添加默认标签“未分类”如果它不在列表中
-        if (!tagList.contains("未分类")) {
-            tagList.add("未分类");
-        }
-
-        myAdapter = new CustomSpinnerAdapter(context, R.layout.spinner_item, tagList);
-        myAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        mySpinner.setAdapter(myAdapter);
-
-        // 设置默认选中项
-        if (tag_name == null || tag_name.isEmpty()) {
-            tag_name = "未分类";
-        }
-
-        int spinnerPosition = myAdapter.getPosition(tag_name);
-        if (spinnerPosition >= 0) {
-            mySpinner.setSelection(spinnerPosition);
-        } else {
-            mySpinner.setSelection(myAdapter.getPosition("未分类")); // 默认选中“未分类”
-        }
+private void refreshSpinner(EditActivity context, String tag_name) {
+    // 刷新标签列表
+    tagList = mNoteHelper.getAllTags();
+    if (tagList != null) {
+        tagList.removeIf(tag -> tag == null || tag.isEmpty()); // 移除空标签和 null 值
+    } else {
+        tagList = new ArrayList<>(); // 如果 tagList 为 null，初始化为空列表
     }
+
+    // 添加默认标签“未分类”如果它不在列表中
+    if (!tagList.contains("未分类")) {
+        tagList.add("未分类");
+    }
+
+
+    myAdapter = new CustomSpinnerAdapter(this, R.layout.spinner_item, tagList);
+    myAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+    mySpinner.setAdapter(myAdapter);
+
+
+
+    // 设置默认选中项
+    if (tag_name == null || tag_name.isEmpty()) {
+        tag_name = "未分类";
+    }
+
+    int spinnerPosition = myAdapter.getPosition(tag_name);
+    if (spinnerPosition >= 0) {
+        mySpinner.setSelection(spinnerPosition);
+    } else {
+        mySpinner.setSelection(myAdapter.getPosition("未分类")); // 默认选中“未分类”
+    }
+
+    // 通知适配器数据已更改
+    myAdapter.notifyDataSetChanged();
+}
+
 
     @Override
     protected void needRefresh() {

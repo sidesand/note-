@@ -22,14 +22,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:gravity="start">
 
             <Spinner
                 android:id="@+id/spinner"
                 style="@style/spinner"
-                android:layout_width="80dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="50dp"
                 android:dropDownWidth="wrap_content"
                 android:popupTheme="@style/spinnerPop"
                 android:spinnerMode="dropdown" />
@@ -39,11 +39,11 @@
     <EditText
         android:id="@+id/et_title"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="48dp"
         android:layout_margin="8dp"
         android:background="@null"
-        android:textColor="?attr/tvMainColor"
         android:hint="Title"
+        android:textColor="?attr/tvMainColor"
         android:textSize="24sp" />
     <View
         android:layout_width="match_parent"
@@ -58,6 +58,6 @@
         android:gravity="top"
         android:background="@null"
         android:textColor="?attr/tvMainColor"
-        android:textSize="24dp" />
+        android:textSize="24sp" />
 
 </LinearLayout>

@@ -11,7 +11,7 @@ android {
         minSdk 29
         targetSdk 34
         versionCode 1
-        versionName "1831"
+        versionName "1870"
     }
 
     buildTypes {
@@ -28,14 +28,13 @@ android {
 }
 
 dependencies {
-    implementation libs.appcompat
-    implementation libs.material
+    /*implementation libs.material
+    implementation libs.appcompat.v161
+    implementation libs.constraintlayout
+    implementation libs.com.google.android.material.material.v140.x2*/
 
-    implementation 'com.google.android.material:material:1.4.0'
-
-    /*启用lombok*/
-    compileOnly 'org.projectlombok:lombok:1.18.28'
-    annotationProcessor 'org.projectlombok:lombok:1.18.28'
-    implementation 'androidx.core:core-ktx:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
 }

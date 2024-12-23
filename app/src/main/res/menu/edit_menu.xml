@@ -13,7 +13,7 @@
         android:id="@+id/menu_save"
         android:icon="?attr/menu_save"
         android:title="Save"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
 
     <!-- 撤销菜单项 -->
     <item
@@ -42,6 +42,6 @@
         android:id="@+id/delete"
         android:icon="?attr/menu_delete"
         android:title="Delete"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
 
 </menu>
